@@ -1,23 +1,14 @@
 /////////// import npm package
-const { json } = require("body-parser");
 const express = require("express");
-const joi = require("joi");
-const mongoose = require("mongoose");
+const path = require("path");
+const helmt = require("helmt");
+const cors = require("cors");
+const connectToDb = require("./Config/db.js");
+const dotenv = require("dotenv").config();
 const { notFound, errorHandling } = require("./middleWare/errors.js");
-const dotenv = require("dotenv");
-dotenv.config();
 
 ////////////connect to DB
-mongoose
-  .connect(process.env.MONGO_url)
-  .then(() => console.log(`connected succsfully to DB `))
-  .catch((err) => console.log(`failed to connect ${err}`));
-
-////////////Routes
-const { bookRoute } = require("./Routes/bookRoute.js");
-const { authorRoute } = require("./Routes/authorRoute.js");
-const {authRoute} = require("./Routes/auth");
-const {userRoute}= require("./Routes/userRoute")
+connectToDb();
 
 /////////// init app
 const app = express();
@@ -25,13 +16,19 @@ const port = process.env.port;
 app.listen(port, () => console.log(`server is connected on port ${port}`));
 
 /////////// Middle Ware
+app.use(express.static(path.join(__dirname, "images")));
 app.use(express.json());
-
+app.use(express.urlencoded({ extended: false }));
+app.use(helmt());
+app.use(cors());
+app.set("view engine", "ejs");
 ///////////My Routes
-app.use("/books", bookRoute);
-app.use("/author", authorRoute);
-app.use("/auth",authRoute );
-app.use("/user",userRoute );
+app.use("/books", require("./Routes/bookRoute.js"));
+app.use("/author", require("./Routes/authorRoute.js"));
+app.use("/auth", require("./Routes/auth"));
+app.use("/user", require("./Routes/userRoute"));
+app.use("/password", require("./Routes/passwordRoute.js"));
+app.use("/upload", require("./Routes/uploadRoute.js"));
 
 // Error Handling
 app.use((req, res, next) => {
